@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>TEMPO AUDIO v7.9</title>
+    <link rel="stylesheet" href="./style.css">
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TEMPO AUDIO SYNC v7.9 PRODUCTION</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Chakrapetch:wght@400;600;700&family=Inter:wght@400;600;900&display=swap');
+        
+        :root {
+            --app-bg: #05040a;
+            --card-bg: linear-gradient(145deg, rgba(23, 19, 50, 0.8) 0%, rgba(13, 9, 33, 0.8) 100%);
+        }
+
+        body { 
+            font-family: 'Inter', 'Chakrapetch', sans-serif; 
+            background-color: var(--app-bg); 
+            color: #ffffff;
+            overflow: hidden;
+            margin: 0; padding: 0;
+            height: 100vh; width: 100vw;
+        }
+
+        .premium-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(139, 92, 246, 0.12);
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.6);
+        }
+
+        .beat-dot {
+            border-radius: 50%;
+            transition: all 0.12s cubic-bezier(0.2, 0.8, 0.2, 1);
+            cursor: pointer;
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center;
+            user-select: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            vertical-align: middle;
+        }
+        
+        .dot-size-normal { width: 44px; height: 44px; }
+        .dot-size-sub { width: 28px; height: 28px; }
+
+        .beat-dot.state-accent { background: linear-gradient(135deg, #00ffcc 0%, #0aa385 100%); box-shadow: 0 0 15px rgba(0, 255, 204, 0.5); border: 1px solid #ffffff; }
+        .beat-dot.state-standard { background: linear-gradient(135deg, #059669 0%, #047857 100%); border: 1px solid rgba(255,255,255,0.2); }
+        .beat-dot.state-sub { background: linear-gradient(135deg, #064e3b 0%, #022c22 100%); border: 1px solid rgba(255,255,255,0.1); }
+        .beat-dot.state-mute { background: rgba(255, 255, 255, 0.03); border: 1px dashed rgba(255, 255, 255, 0.3) !important; box-shadow: none; }
+        
+        .beat-flash { background: #ffffff !important; border-color: #ffffff !important; box-shadow: 0 0 25px #ffffff !important; transform: scale(1.06); }
+
+        .bpm-play-glow-btn {
+            box-shadow: 0 0 20px 2px rgba(255, 255, 255, 0.18);
+            transition: all 0.2s ease;
+        }
+        .bpm-play-glow-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 0 10px 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .app-page {
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s;
+            position: absolute; width: 100%; height: 100%;
+        }
+        .page-hidden { transform: translateX(100%); opacity: 0; pointer-events: none; }
+
+        .lyrics-panel-view {
+            transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), height 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s;
+            z-index: 150;
+        }
+        .panel-state-hidden { transform: translateY(100vh); opacity: 0; pointer-events: none; }
+        .panel-state-docked { transform: translateY(calc(100vh - 65px)); opacity: 1; height: 65px; }
+        .panel-state-half { transform: translateY(calc(100vh - 72vh)); opacity: 1; height: 72vh; }
+        .panel-state-full { transform: translateY(0vh); opacity: 1; height: 100vh; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        #lyricsEditor {
+            word-break: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body class="select-none relative">
+
+<div id="appViewport" class="w-full h-full relative">
+
+    <div id="mainPage" class="app-page bg-[#05040a] flex flex-col justify-between p-5 pb-8">
+        
+        <header class="flex justify-between items-center pt-2">
+            <button onclick="goToSetlist()" class="flex items-center gap-2 text-xs font-bold bg-[#141033] border border-purple-500/20 text-purple-300 px-4 py-2.5 rounded-xl active:scale-95 transition">
+                <i class="fa-solid fa-list-ul"></i> My Setlist
+            </button>
+            <div class="text-center flex-1 mx-2">
+                <h1 class="text-[9px] uppercase tracking-widest text-purple-500/60 font-black">Tempo Sync v7.9</h1>
+                <p id="currentActiveSongTitle" class="text-base font-bold text-white tracking-tight mt-0.5 truncate">Waltz For Debby</p>
+            </div>
+            
+            <div class="flex gap-2">
+                <button id="mainFavBtn" onclick="toggleFavoriteCurrent()" class="w-10 h-10 rounded-xl bg-[#141033] flex items-center justify-center text-gray-500 border border-purple-500/10 active:scale-95 transition">
+                    <i class="fa-solid fa-star text-base"></i>
+                </button>
+                <button onclick="toggleVolumePopover()" class="w-10 h-10 rounded-xl bg-[#141033] flex items-center justify-center text-purple-400 border border-purple-500/10 active:scale-95 transition">
+                    <i class="fa-solid fa-sliders text-base"></i>
+                </button>
+                <button id="floatingLyricsTriggerBtn" onclick="openLyricsPanel()" class="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center text-white shadow-lg shadow-purple-600/30">
+                    <i class="fa-solid fa-file-lines text-base"></i>
+                </button>
+            </div>
+        </header>
+
+        <div id="beatMatrixDisplayCard" class="premium-card rounded-2xl p-4 my-2 flex flex-col justify-center">
+            <div class="w-full flex justify-between items-center mb-1">
+                <span class="text-[9px] text-purple-400 uppercase font-black tracking-wider">Beat Grid Display</span>
+                <label class="flex items-center gap-2 cursor-pointer text-xs text-purple-300 font-medium">
+                    <input type="checkbox" id="toggleDotsCheck" checked onchange="toggleDotsVisibility()" class="w-4 h-4 accent-[#00ffcc]">
+                    เปิดจุดจังหวะ
+                </label>
+            </div>
+            <div id="dotsOuterWrapper" class="w-full transition-all duration-300 overflow-hidden">
+                <div id="dotsContainer" class="w-full flex flex-wrap justify-center items-center gap-2.5 py-3 min-h-[60px]"></div>
+            </div>
+        </div>
+
+        <div id="tempoMasterControlBlock" class="my-4 flex flex-col items-center justify-center">
+            <span class="text-[9px] text-purple-400/70 uppercase tracking-[0.25em] font-bold mb-1">Tempo Master</span>
+            <div class="flex items-center justify-center gap-10">
+                <button onclick="changeBPM(-1)" class="text-3xl font-light text-purple-400/80 hover:text-white px-4 active:scale-75 transition select-none">-</button>
+                <div class="text-center">
+                    <input type="number" id="bpmNumberInput" value="84" min="1" max="350" class="bg-transparent text-7xl font-black text-center w-36 focus:outline-none tracking-tighter text-white" oninput="onManualBPM(this.value)">
+                    <span class="text-[10px] text-gray-500 font-bold block tracking-widest mt-0.5">BPM</span>
+                </div>
+                <button onclick="changeBPM(1)" class="text-3xl font-light text-purple-400/80 hover:text-white px-4 active:scale-75 transition select-none">+</button>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-between relative h-24 my-1 px-2">
+            <div class="w-[30%]">
+                <select id="timeSigSelector" onchange="onTimeSigChange(this.value)" class="w-full bg-[#141033] border border-purple-500/15 text-xs font-bold rounded-xl py-2.5 px-2 focus:outline-none text-white text-center appearance-none cursor-pointer">
+                    <option value="4/4">4/4</option>
+                    <option value="3/4">3/4</option>
+                    <option value="2/4">2/4</option>
+                    <option value="1/2">1/2</option>
+                    <option value="1/3">1/3</option>
+                    <option value="5/4">5/4</option>
+                    <option value="6/4">6/4</option>
+                    <option value="3/8">3/8</option>
+                    <option value="5/8">5/8</option>
+                    <option value="6/8" selected>6/8</option>
+                    <option value="7/8">7/8</option>
+                    <option value="9/8">9/8</option>
+                    <option value="12/8">12/8</option>
+                </select>
+            </div>
+
+            <div class="absolute left-1/2 -translate-x-1/2 p-3">
+                <button id="mainPlayBtn" onclick="toggleMetronome()" class="w-16 h-16 rounded-full bg-purple-600 flex items-center justify-center text-white bpm-play-glow-btn">
+                    <i id="mainPlayIcon" class="fa-solid fa-play text-lg pl-0.5"></i>
+                </button>
+            </div>
+
+            <div class="w-[30%]">
+                <select id="subdivisionSelector" onchange="onSubChange(this.value)" class="w-full bg-[#141033] border border-purple-500/15 text-xs font-bold rounded-xl py-2.5 px-2 focus:outline-none text-purple-300 text-center appearance-none cursor-pointer">
+                    <option value="1">♪ 1x</option>
+                    <option value="2">♫ 2x</option>
+                    <option value="3">♪♫ 3x</option>
+                    <option value="4">♫♫ 4x</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="premium-card rounded-2xl p-4 mt-2 flex flex-col gap-2">
+            <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider"><i class="fa-solid fa-sliders mr-1 text-purple-400"></i> Audio Panel</span>
+            <div onclick="document.getElementById('hiddenAudioInp').click()" class="bg-black/40 border border-dashed border-purple-500/25 rounded-xl p-2.5 text-center cursor-pointer hover:bg-purple-500/5 transition">
+                <p id="audioFileStatus" class="text-[11px] text-purple-300 truncate"><i class="fa-solid fa-music mr-2 text-purple-400"></i>เลือกไฟล์เสียงประกอบสำหรับ Backing Track...</p>
+                <input type="file" id="hiddenAudioInp" hidden accept="audio/*" onchange="processLoadedAudio(event)">
+            </div>
+            
+            <div class="flex justify-center items-center gap-5 mt-1">
+                <button onclick="incrementAudioPlayback(-5)" class="w-10 h-10 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-700/50 flex items-center justify-center text-xs active:scale-90 transition">
+                    <span class="font-bold text-[10px]">-5s</span>
+                </button>
+                <button onclick="toggleAudioPlayback()" class="w-10 h-10 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-700/50 flex items-center justify-center text-xs active:scale-90 transition">
+                    <i id="quickPlayIcon" class="fa-solid fa-play ml-0.5"></i>
+                </button>
+                <button onclick="fullStopAudioPlaybackTrack()" class="w-10 h-10 rounded-full bg-neutral-800 hover:bg-neutral-700 text-red-400 border border-neutral-700/50 flex items-center justify-center text-xs active:scale-90 transition">
+                    <i class="fa-solid fa-square text-[10px]"></i>
+                </button>
+                <button onclick="incrementAudioPlayback(5)" class="w-10 h-10 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-700/50 flex items-center justify-center text-xs active:scale-90 transition">
+                    <span class="font-bold text-[10px]">+5s</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="setlistPage" class="app-page bg-[#05040a] flex flex-col p-5 z-[200] page-hidden">
+        <header class="flex items-center gap-4 my-2">
+            <button onclick="backToMain()" class="text-purple-400 text-xs bg-[#141033] px-4 py-2 rounded-xl border border-white/5"><i class="fa-solid fa-chevron-left mr-1"></i> ย้อนกลับ</button>
+            <h2 class="text-base font-black tracking-tight">My Song Library</h2>
+        </header>
+        
+        <input type="text" id="songSearchField" oninput="populateSongList()" placeholder="ค้นหารายชื่อเพลง..." class="w-full bg-[#141033] rounded-xl py-2.5 px-4 text-xs text-white outline-none border border-white/5 mb-3">
+        
+        <div class="flex gap-2 mb-4">
+            <input type="text" id="newSongTitleField" placeholder="ระบุชื่อเพลงใหม่..." class="flex-1 bg-[#141033] rounded-xl px-3.5 text-xs outline-none border border-purple-500/20 text-white">
+            <button onclick="createNewSongObj()" class="bg-purple-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs active:scale-95 transition">+ เพิ่มคลัง</button>
+        </div>
+        
+        <div id="songItemsStack" class="flex-1 overflow-y-auto space-y-2.5 no-scrollbar pb-8"></div>
+    </div>
+
+    <div id="volumePopover" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[250] hidden flex items-center justify-center p-6" onclick="toggleVolumePopover()">
+        <div class="premium-card w-full max-w-sm rounded-2xl p-5 flex flex-col gap-3.5" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center border-b border-white/10 pb-2">
+                <h3 class="text-xs font-black uppercase tracking-wider text-purple-400">Audio Mixer</h3>
+                <button onclick="toggleVolumePopover()" class="text-gray-400 text-xs font-bold">ปิด</button>
+            </div>
+            
+            <div class="flex flex-col gap-1.5 bg-black/20 p-2.5 rounded-xl border border-white/5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-purple-200 font-bold"><i class="fa-solid fa-drum mr-1 text-purple-400"></i> Metronome Click</span>
+                    <div class="flex gap-1 text-[8px] font-black">
+                        <button onclick="setSoundProfile('click', 'M1')" id="btn-click-M1" class="px-1.5 py-0.5 rounded bg-purple-600 text-white">M1</button>
+                        <button onclick="setSoundProfile('click', 'M2')" id="btn-click-M2" class="px-1.5 py-0.5 rounded bg-gray-800 text-gray-400">M2</button>
+                        <button onclick="setSoundProfile('click', 'M3')" id="btn-click-M3" class="px-1.5 py-0.5 rounded bg-gray-800 text-gray-400">M3</button>
+                        <button onclick="setSoundProfile('click', 'M4')" id="btn-click-M4" class="px-1.5 py-0.5 rounded bg-gray-800 text-gray-400">M4</button>
+                        <button onclick="setSoundProfile('click', 'M5')" id="btn-click-M5" class="px-1.5 py-0.5 rounded bg-gray-800 text-gray-400">M5</button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="range" id="metronomeVolumeSlider" min="0" max="100" value="80" oninput="updateMetronomeVolume(this.value)" class="flex-1 accent-[#00ffcc] h-1 bg-gray-700 rounded-lg appearance-none">
+                    <span id="clickVolValueLabel" class="text-xs text-gray-400 w-8 text-right">80%</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5 bg-black/20 p-2.5 rounded-xl border border-white/5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-purple-200 font-bold"><i class="fa-solid fa-border-all mr-1 text-purple-400"></i> Subdivisions Click</span>
+                    <div class="flex gap-1 text-[8px] font-black">
+                        <button onclick="setSoundProfile('sub', 'S1')" id="btn-sub-S1" class="px-1.5 py-0.5 rounded bg-purple-600 text-white">S1</button>
+                        <button onclick="setSoundProfile('sub', 'S2')" id="btn-sub-S2" class="px-1.5 py-0.5 rounded bg-gray-800 text-gray-400">S2</button>
+                        <button onclick="setSoundProfile('sub', 'S3')" id="btn-sub-S3" class="px-1.5 py-0.5 rounded bg-gray-800 text-gray-400">S3</button>
+                        <button onclick="setSoundProfile('sub', 'S4')" id="btn-sub-S4" class="px-1.5 py-0.5 rounded bg-gray-800 text-gray-400">S4</button>
+                        <button onclick="setSoundProfile('sub', 'S5')" id="btn-sub-S5" class="px-1.5 py-0.5 rounded bg-gray-800 text-gray-400">S5</button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="range" id="subdivisionVolumeSlider" min="0" max="100" value="70" oninput="updateSubdivisionVolume(this.value)" class="flex-1 accent-[#00ffcc] h-1 bg-gray-700 rounded-lg appearance-none">
+                    <span id="subVolValueLabel" class="text-xs text-gray-400 w-8 text-right">70%</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5 bg-black/20 p-2.5 rounded-xl border border-white/5">
+                <div class="flex justify-between text-xs font-bold">
+                    <span class="text-purple-200"><i class="fa-solid fa-music mr-1 text-purple-400"></i> Backing Track</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="range" id="appVolumeSlider" min="0" max="100" value="80" oninput="changeCoreVolume(this.value)" class="w-full accent-[#00ffcc] h-1 bg-gray-700 rounded-lg appearance-none">
+                    <span id="musicVolValueLabel" class="text-xs text-gray-400 w-8 text-right">80%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="lyricsSheet" class="lyrics-panel-view panel-state-hidden fixed top-0 left-0 w-full bg-[#090714] rounded-t-[30px] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.85)] border-t border-purple-500/10">
+        
+        <div class="w-full flex justify-between items-center px-5 py-3.5 cursor-pointer bg-[#0e0a22]/80 border-b border-white/5 rounded-t-[30px]" onclick="advanceLyricsDisplayState()">
+            <div class="w-4"></div>
+            <div class="text-center">
+                <div class="text-xs font-black text-purple-300" id="sheetSongLabel">Waltz For Debby</div>
+                <p id="panelResizeHint" class="text-[7px] text-gray-500 uppercase font-bold tracking-widest mt-0.5">แตะตรงนี้เพื่อสลับการแสดงผล 3 ระดับ</p>
+            </div>
+            <button onclick="event.stopPropagation(); closeLyricsPanelEntirely()" class="w-7 h-7 rounded-full bg-black/40 text-gray-400 hover:text-white flex items-center justify-center text-xs">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div id="lyricsFormattingToolbar" class="px-5 pb-3 bg-[#090714] border-b border-white/5 flex flex-col gap-2.5 hidden">
+            <div class="flex items-center justify-between flex-wrap gap-2 pt-1">
+                
+                <div class="flex items-center gap-1 bg-black/30 p-1 rounded-xl border border-white/5">
+                    <div id="colorPaletteSlotsContainer" class="flex gap-1.5 items-center"></div>
+                    <div class="relative w-5 h-5 rounded-full overflow-hidden border border-purple-500/40 bg-purple-950/30 flex items-center justify-center cursor-pointer">
+                        <i class="fa-solid fa-plus text-[10px] text-purple-300 pointer-events-none"></i>
+                        <input type="color" id="nativeHuePickerInput" onchange="addNewColorFromPicker(this.value)" class="absolute inset-0 opacity-0 cursor-pointer">
+                    </div>
+                </div>
+                
+                <div class="flex gap-1 items-center bg-black/40 p-1 rounded-xl border border-white/5">
+                    <span class="text-[8.5px] text-gray-400 px-1 font-bold">FONT SIZE:</span>
+                    <button onclick="alterGlobalFontSize(-2)" class="w-6 h-6 rounded-lg bg-[#1a1438] font-bold text-white text-xs select-none">-</button>
+                    <button onclick="alterGlobalFontSize(2)" class="w-6 h-6 rounded-lg bg-[#1a1438] font-bold text-white text-xs select-none">+</button>
+                </div>
+
+                <div class="flex gap-1.5">
+                    <button onclick="triggerStackHistoryAction('undo')" class="bg-gray-800 text-purple-200 text-[8px] font-black px-2 py-1.5 rounded-lg active:scale-90 transition">UNDO</button>
+                    <button onclick="triggerStackHistoryAction('redo')" class="bg-gray-800 text-purple-200 text-[8px] font-black px-2 py-1.5 rounded-lg active:scale-90 transition">REDO</button>
+                    <button onclick="clearLyricsCanvas()" class="bg-red-950/30 text-red-400 text-[8px] font-black px-2 py-1.5 rounded-lg active:scale-90 transition">CLEAR</button>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between gap-3 bg-purple-950/20 p-2 rounded-xl border border-purple-500/10">
+                <span class="text-[8px] font-black text-purple-400 uppercase tracking-wider"><i class="fa-solid fa-scroll mr-1"></i> Auto Scroll</span>
+                <input type="range" id="scrollSpeedSlider" min="5" max="100" value="40" oninput="reengageAutoScrollLoop()" class="flex-1 accent-[#00ffcc] h-1 bg-gray-800 rounded">
+                <label class="flex items-center gap-1.5 cursor-pointer text-[8px] font-black text-purple-300">
+                    <input type="checkbox" id="autoScrollCheck" onchange="reengageAutoScrollLoop()" class="w-3.5 h-3.5 accent-[#00ffcc]"> RUN
+                </label>
+            </div>
+
+            <div class="flex gap-1.5 items-center flex-wrap">
+                <span class="text-[8px] text-gray-500 font-bold">SYMBOLS:</span>
+                <div id="macroContainer" class="flex gap-1.5 items-center flex-wrap"></div>
+            </div>
+        </div>
+
+        <div id="sheetScrollBody" class="flex-1 overflow-y-auto px-5 no-scrollbar bg-[#090714] hidden">
+            <div id="lyricsEditor" contenteditable="true" class="w-full min-h-[250px] bg-transparent text-white font-black leading-[1.6] outline-none pt-4" placeholder="วางหรือพิมพ์ข้อมูลเนื้อเพลงของคุณที่นี่..."></div>
+            <div class="h-[140px]"></div>
+        </div>
+
+        <div id="lyricsFooterPlaybackControls" class="absolute bottom-0 left-0 w-full pt-4 pb-6 px-6 flex justify-around items-center gap-2 bg-gradient-to-t from-[#090714] via-[#090714]/95 to-transparent z-[180] hidden">
+            <button onclick="incrementAudioPlayback(-5)" class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex flex-col items-center justify-center text-white text-xs active:scale-90 transition shadow-inner">
+                <i class="fa-solid fa-arrow-rotate-left"></i>
+                <span class="text-[7px] font-bold mt-0.5">5s</span>
+            </button>
+            <button onclick="toggleAudioPlayback()" class="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center text-lg shadow-xl active:scale-90 transition">
+                <i id="audioPlayIcon" class="fa-solid fa-play"></i>
+            </button>
+            <button onclick="fullStopAudioPlaybackTrack()" class="w-10 h-10 rounded-full bg-white/5 border border-red-500/20 text-red-400 flex items-center justify-center text-xs active:scale-90 transition">
+                <i class="fa-solid fa-square"></i>
+            </button>
+            <button onclick="incrementAudioPlayback(5)" class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex flex-col items-center justify-center text-white text-xs active:scale-90 transition shadow-inner">
+                <i class="fa-solid fa-arrow-rotate-right"></i>
+                <span class="text-[7px] font-bold mt-0.5">5s</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<audio id="coreAudio"></audio>
+
+<script>
+    // --- DATABASE MASTER CORE ---
+    let db = JSON.parse(localStorage.getItem('tempo_v78_db') || '[]');
+    if (db.length === 0) {
+        db.push({ 
+            id: 3001, title: "Waltz For Debby", bpm: 84, ts: "6/8", sub: 1, fav: true, 
+            lyrics: "In her own sweet world... <span style='color:#00ffcc;'>→</span><br>She dances...", 
+            dotStates: [1, 2, 2, 3, 3, 3],
+            fontSize: 26, 
+            colorPalette: ['#ffffff', '#ef4444', '#10b981', '#3b82f6', '#8b5cf6'],
+            symbols: ["→", "-", "↗", "↘", "⤴", "⤷", "⤵︎", "∿"]
+        });
+        localStorage.setItem('tempo_v78_db', JSON.stringify(db));
+    }
+
+    sortDatabasePriorities();
+
+    let activeId = db[0].id;
+    let isPlaying = false;
+    let lyricsState = 0; 
+    let ticker = null;
+    let beatIdx = 0;
+    
+    let undoStack = [];
+    let redoStack = [];
+    let isUndoRedoActionFlag = false;
+
+    let autoScrollInterval = null;
+    let clickVolume = 0.8;
+    let subVolume = 0.7;
+
+    let currentClickSoundProfile = 'M1';
+    let currentSubSoundProfile = 'S1';
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const coreAudio = document.getElementById('coreAudio');
+    const editor = document.getElementById('lyricsEditor');
+
+    function sortDatabasePriorities() {
+        db.sort((a, b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0));
+    }
+
+    function save() {
+        const currentSong = db.find(x => x.id === activeId);
+        if (currentSong) {
+            let parsedBpm = parseInt(document.getElementById('bpmNumberInput').value);
+            currentSong.bpm = Math.min(350, Math.max(1, parsedBpm || 84));
+            currentSong.ts = document.getElementById('timeSigSelector').value;
+            currentSong.sub = parseInt(document.getElementById('subdivisionSelector').value);
+            currentSong.lyrics = editor.innerHTML;
+        }
+        localStorage.setItem('tempo_v78_db', JSON.stringify(db));
+    }
+
+    // --- VIEW CONTROLLERS & UI DRIVER ---
+    function goToSetlist() { document.getElementById('setlistPage').classList.remove('page-hidden'); populateSongList(); }
+    function backToMain() { document.getElementById('setlistPage').classList.add('page-hidden'); }
+    function toggleVolumePopover() { document.getElementById('volumePopover').classList.toggle('hidden'); }
+    
+    function openLyricsPanel() { 
+        lyricsState = 1; 
+        refreshLyricsPanelCSS(); 
+    }
+    
+    function advanceLyricsDisplayState() {
+        lyricsState = (lyricsState % 3) + 1; 
+        refreshLyricsPanelCSS();
+    }
+
+    function closeLyricsPanelEntirely() {
+        lyricsState = 0;
+        refreshLyricsPanelCSS();
+    }
+
+    function refreshLyricsPanelCSS() {
+        const panel = document.getElementById('lyricsSheet');
+        const toolbar = document.getElementById('lyricsFormattingToolbar');
+        const contentBody = document.getElementById('sheetScrollBody');
+        const footerControls = document.getElementById('lyricsFooterPlaybackControls');
+        const topTriggerBtn = document.getElementById('floatingLyricsTriggerBtn');
+
+        // Clean slate wipe
+        panel.classList.remove('panel-state-hidden', 'panel-state-docked', 'panel-state-half', 'panel-state-full');
+        toolbar.classList.add('hidden');
+        contentBody.classList.add('hidden');
+        footerControls.classList.add('hidden');
+        topTriggerBtn.classList.remove('opacity-40');
+
+        if (lyricsState === 0) {
+            panel.classList.add('panel-state-hidden');
+        } 
+        else if (lyricsState === 1) {
+            panel.classList.add('panel-state-docked');
+        } 
+        else if (lyricsState === 2) {
+            // Level 2: Half Screen Overlay (Main structure background parameters untouched)
+            panel.classList.add('panel-state-half');
+            contentBody.classList.remove('hidden');
+            footerControls.classList.remove('hidden');
+        } 
+        else if (lyricsState === 3) {
+            // Level 3: Full Cinematic Viewport Canvas
+            panel.classList.add('panel-state-full');
+            toolbar.classList.remove('hidden');
+            contentBody.classList.remove('hidden');
+            footerControls.classList.remove('hidden');
+            topTriggerBtn.classList.add('opacity-40');
+        }
+    }
+
+    // --- SONG SETLIST MANAGER ---
+    function populateSongList() {
+        const container = document.getElementById('songItemsStack');
+        container.innerHTML = "";
+        const keyword = document.getElementById('songSearchField').value.toLowerCase();
+        
+        sortDatabasePriorities();
+        const filteredList = db.filter(x => x.title.toLowerCase().includes(keyword));
+        
+        if(filteredList.length === 0) {
+            container.innerHTML = `<div class="text-center py-8 text-xs text-gray-500 font-bold">ไม่พบข้อมูลรายชื่อเพลงของคุณ</div>`;
+            return;
+        }
+
+        filteredList.forEach((s) => {
+            const exactGlobalIndex = db.findIndex(item => item.id === s.id);
+            const isSongFavorited = s.fav;
+
+            const row = document.createElement('div');
+            row.className = `p-4 bg-[#141033] rounded-xl flex items-center justify-between cursor-pointer border-l-4 ${s.id === activeId ? 'border-purple-500 bg-[#191442]' : 'border-transparent'}`;
+            row.onclick = () => selectSong(s.id);
+            row.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <div class="flex flex-col gap-1" onclick="event.stopPropagation()">
+                        <button onclick="executeShiftOrderAction(${exactGlobalIndex}, -1)" class="text-gray-500 hover:text-white text-[10px]"><i class="fa-solid fa-chevron-up"></i></button>
+                        <button onclick="executeShiftOrderAction(${exactGlobalIndex}, 1)" class="text-gray-500 hover:text-white text-[10px]"><i class="fa-solid fa-chevron-down"></i></button>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-xs text-white">${s.title}</h4>
+                        <p class="text-[9px] text-purple-400 mt-0.5">${s.bpm} BPM | ${s.ts}</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 items-center" onclick="event.stopPropagation()">
+                    <button onclick="toggleSongFavState(${s.id}); event.stopPropagation();" class="${isSongFavorited?'text-yellow-400':'text-gray-600'} text-xs"><i class="fa-solid fa-star"></i></button>
+                    <button onclick="deleteSongFromDb(${s.id}); event.stopPropagation();" class="text-red-900/60 hover:text-red-400 text-xs"><i class="fa-solid fa-trash"></i></button>
+                </div>`;
+            container.appendChild(row);
+        });
+    }
+
+    function executeShiftOrderAction(globalIndex, direction) {
+        const targetIndex = globalIndex + direction;
+        if (targetIndex < 0 || targetIndex >= db.length) return;
+        const currentItem = db[globalIndex];
+        const targetItem = db[targetIndex];
+        if (currentItem.fav !== targetItem.fav) return;
+
+        db[globalIndex] = targetItem;
+        db[targetIndex] = currentItem;
+        localStorage.setItem('tempo_v78_db', JSON.stringify(db));
+        populateSongList();
+    }
+
+    function createNewSongObj() {
+        const field = document.getElementById('newSongTitleField');
+        const title = field.value.trim();
+        if (!title) return;
+        
+        const schema = { 
+            id: Date.now(), title: title, bpm: 84, ts: "4/4", sub: 1, fav: false, 
+            lyrics: "พิมพ์เนื้อหาบทเพลงของคุณที่นี่...", 
+            fontSize: 26,
+            dotStates: [1, 2, 2, 2],
+            colorPalette: ['#ffffff', '#ef4444', '#10b981', '#3b82f6', '#8b5cf6'],
+            symbols: ["→", "-", "↗", "↘", "⤴", "⤷", "⤵︎", "∿"]
+        };
+        db.push(schema);
+        sortDatabasePriorities();
+        localStorage.setItem('tempo_v78_db', JSON.stringify(db));
+        field.value = "";
+        selectSong(schema.id);
+    }
+
+    function selectSong(id) {
+        haltMetronome();
+        activeId = id;
+        const song = db.find(x => x.id === id);
+        if(!song) return;
+        
+        document.getElementById('bpmNumberInput').value = song.bpm;
+        document.getElementById('timeSigSelector').value = song.ts;
+        document.getElementById('subdivisionSelector').value = song.sub;
+        document.getElementById('currentActiveSongTitle').innerText = song.title;
+        document.getElementById('sheetSongLabel').innerText = song.title;
+        
+        undoStack = [];
+        redoStack = [];
+        editor.innerHTML = song.lyrics;
+        
+        if (!song.fontSize) song.fontSize = 26;
+        editor.style.fontSize = song.fontSize + "px";
+        
+        document.getElementById('mainFavBtn').className = song.fav ? 
+            'w-10 h-10 rounded-xl bg-[#141033] flex items-center justify-center text-yellow-400 border border-purple-500/20 active:scale-95 transition' : 
+            'w-10 h-10 rounded-xl bg-[#141033] flex items-center justify-center text-gray-500 border border-purple-500/10 active:scale-95 transition';
+        
+        if (!song.colorPalette) song.colorPalette = ['#ffffff', '#ef4444', '#10b981', '#3b82f6', '#8b5cf6'];
+        if (!song.symbols) song.symbols = ["→", "-", "↗", "↘", "⤴", "⤷", "⤵︎", "∿"];
+
+        buildDynamicBeatDots();
+        refreshColorPaletteRibbonUI();
+        drawMacroBadges(song.symbols);
+        backToMain();
+    }
+
+    function toggleSongFavState(id) {
+        const song = db.find(x => x.id === id);
+        if(song) song.fav = !song.fav;
+        sortDatabasePriorities();
+        localStorage.setItem('tempo_v78_db', JSON.stringify(db));
+        populateSongList();
+        
+        // FIX STABLE VIEW: Update star UI directly without redirection page jumps
+        if(id === activeId && song) {
+            document.getElementById('mainFavBtn').className = song.fav ? 
+                'w-10 h-10 rounded-xl bg-[#141033] flex items-center justify-center text-yellow-400 border border-purple-500/20 active:scale-95 transition' : 
+                'w-10 h-10 rounded-xl bg-[#141033] flex items-center justify-center text-gray-500 border border-purple-500/10 active:scale-95 transition';
+        }
+    }
+
+    function toggleFavoriteCurrent() { toggleSongFavState(activeId); }
+
+    function deleteSongFromDb(id) {
+        if (db.length <= 1) return alert("ต้องมีเพลงเหลือในคลังอย่างน้อย 1 เพลง");
+        if (confirm("ต้องการลบเพลงนี้ถาวรหรือไม่?")) {
+            db = db.filter(x => x.id !== id);
+            sortDatabasePriorities();
+            localStorage.setItem('tempo_v78_db', JSON.stringify(db));
+            if (activeId === id) selectSong(db[0].id); else populateSongList();
+        }
+    }
+
+    // --- DISPLAY MODULES ---
+    function buildDynamicBeatDots() {
+        const container = document.getElementById('dotsContainer');
+        const tsValue = document.getElementById('timeSigSelector').value;
+        const totalBeats = parseInt(tsValue.split('/')[0]) || 4;
+        const song = db.find(x => x.id === activeId);
+        
+        if(!song.dotStates || song.dotStates.length !== totalBeats) {
+            song.dotStates = Array(totalBeats).fill(2);
+            song.dotStates[0] = 1; 
+            if(tsValue === "6/8" && totalBeats >= 4) song.dotStates[3] = 1;
+            if(tsValue === "9/8" && totalBeats >= 7) { song.dotStates[3] = 1; song.dotStates[6] = 1; }
+            if(tsValue === "12/8" && totalBeats >= 10) { song.dotStates[3] = 1; song.dotStates[6] = 1; song.dotStates[9] = 1; }
+        }
+        
+        container.innerHTML = "";
+        for (let i = 0; i < totalBeats; i++) {
+            const cell = document.createElement('div');
+            cell.id = `dot-${i}`;
+            
+            let scaleClass = "dot-size-normal";
+            if(tsValue === "6/8" && i !== 0 && i !== 3) scaleClass = "dot-size-sub";
+            if(tsValue === "9/8" && i !== 0 && i !== 3 && i !== 6) scaleClass = "dot-size-sub";
+            if(tsValue === "12/8" && i !== 0 && i !== 3 && i !== 6 && i !== 9) scaleClass = "dot-size-sub";
+            if(totalBeats > 6 && !["6/8","9/8","12/8"].includes(tsValue)) scaleClass = "dot-size-sub";
+
+            cell.className = `beat-dot ${scaleClass}`;
+            updateUIMonochromaticDotLook(cell, song.dotStates[i]);
+            
+            cell.onclick = () => {
+                song.dotStates[i] = (song.dotStates[i] % 4) + 1; 
+                updateUIMonochromaticDotLook(cell, song.dotStates[i]);
+                save();
+            };
+            container.appendChild(cell);
+        }
+    }
+
+    function updateUIMonochromaticDotLook(el, state) {
+        el.className = el.className.replace(/\bstate-\S+/g, ''); 
+        if (state === 1) el.classList.add('state-accent');
+        else if (state === 2) el.classList.add('state-standard');
+        else if (state === 3) el.classList.add('state-sub');
+        else el.classList.add('state-mute');
+    }
+
+    function toggleDotsVisibility() {
+        const isChecked = document.getElementById('toggleDotsCheck').checked;
+        document.getElementById('dotsOuterWrapper').style.maxHeight = isChecked ? "250px" : "0px";
+    }
+
+    // --- PLAY / STOP METRONOME ENGINE ---
+    function toggleMetronome() {
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        
+        // FIX PLAY/STOP LOGIC: Toggles cleanly between starting and halting entirely
+        if (isPlaying) {
+            haltMetronome();
+        } else {
+            isPlaying = true;
+            document.getElementById('mainPlayIcon').className = "fa-solid fa-pause";
+            runSubdivisionTicker();
+        }
+    }
+
+    function runSubdivisionTicker() {
+        // GLOBAL SCALING ENGINE: Bounds strictly set from 1 to 350 BPM
+        let inputVal = parseInt(document.getElementById('bpmNumberInput').value) || 84;
+        const tempoBpm = Math.min(350, Math.max(1, inputVal));
+        const subFactor = parseInt(document.getElementById('subdivisionSelector').value) || 1;
+        
+        // Formula calculation: 60,000ms / BPM (e.g. 1 BPM = 60,000ms per beat)
+        const tickDelay = (60000 / tempoBpm) / subFactor;
+        const song = db.find(x => x.id === activeId);
+        const totalMeterBeats = parseInt(document.getElementById('timeSigSelector').value.split('/')[0]) || 4;
+        
+        clearInterval(ticker);
+        ticker = setInterval(() => {
+            if (beatIdx % subFactor === 0) {
+                const currentFrame = (beatIdx / subFactor) % totalMeterBeats;
+                document.querySelectorAll('.beat-dot').forEach(d => d.classList.remove('beat-flash'));
+                const dotElement = document.getElementById(`dot-${currentFrame}`);
+                if (dotElement) {
+                    dotElement.classList.add('beat-flash');
+                    const stateType = song.dotStates[currentFrame];
+                    
+                    let frequencyKhz = 1000;
+                    if (stateType === 1) synthEngineTone(frequencyKhz, 0.09, clickVolume * 1.0, currentClickSoundProfile);
+                    else if (stateType === 2) synthEngineTone(frequencyKhz * 0.7, 0.07, clickVolume * 0.65, currentClickSoundProfile);
+                    else if (stateType === 3) synthEngineTone(frequencyKhz * 0.5, 0.05, clickVolume * 0.4, currentClickSoundProfile);
+                }
+            } else {
+                synthEngineTone(440, 0.03, subVolume * 0.5, currentSubSoundProfile); 
+            }
+            beatIdx++;
+        }, tickDelay);
+    }
+
+    function synthEngineTone(freq, length, gainVal, profile) {
+        try {
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            if (profile.includes('1')) {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            } else if (profile.includes('2')) {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq * 1.3, audioCtx.currentTime);
+            } else if (profile.includes('3')) {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq * 0.75, audioCtx.currentTime);
+            } else if (profile.includes('4')) {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                const overtone = audioCtx.createOscillator();
+                const overtoneGain = audioCtx.createGain();
+                overtone.type = 'sine';
+                overtone.frequency.setValueAtTime(freq * 2.0, audioCtx.currentTime);
+                overtone.connect(overtoneGain);
+                overtoneGain.connect(audioCtx.destination);
+                overtoneGain.gain.setValueAtTime(gainVal * 0.35, audioCtx.currentTime);
+                overtoneGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + length * 1.8);
+                overtone.start(); overtone.stop(audioCtx.currentTime + length * 1.8);
+            } else if (profile.includes('5')) {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(freq * 1.5, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(freq * 0.4, audioCtx.currentTime + length);
+            }
+
+            gainNode.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + length);
+            osc.start();
+            osc.stop(audioCtx.currentTime + length);
+        } catch(e){}
+    }
+
+    function haltMetronome() { 
+        isPlaying = false; 
+        clearInterval(ticker); 
+        beatIdx = 0; 
+        document.getElementById('mainPlayIcon').className = "fa-solid fa-play pl-0.5"; 
+        document.querySelectorAll('.beat-dot').forEach(d => d.classList.remove('beat-flash'));
+    }
+
+    function setSoundProfile(track, name) {
+        if (track === 'click') {
+            currentClickSoundProfile = name;
+            document.querySelectorAll("[id^='btn-click-']").forEach(b => b.className = "px-1.5 py-0.5 rounded bg-gray-800 text-gray-400");
+            document.getElementById(`btn-click-${name}`).className = "px-1.5 py-0.5 rounded bg-purple-600 text-white";
+        } else {
+            currentSubSoundProfile = name;
+            document.querySelectorAll("[id^='btn-sub-']").forEach(b => b.className = "px-1.5 py-0.5 rounded bg-gray-800 text-gray-400");
+            document.getElementById(`btn-sub-${name}`).className = "px-1.5 py-0.5 rounded bg-purple-600 text-white";
+        }
+        if (isPlaying) runSubdivisionTicker();
+    }
+
+    // --- TEXT ENGINE & SNAPSHOTS ---
+    editor.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const textData = (e.originalEvent || e).clipboardData.getData('text/plain');
+        registerSnapshotIntoHistory();
+        document.execCommand("insertText", false, textData);
+    });
+
+    editor.addEventListener('keydown', function(e) {
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+            e.preventDefault();
+            triggerStackHistoryAction(e.shiftKey ? 'redo' : 'undo');
+        }
+    });
+
+    editor.addEventListener('input', function() {
+        if (!isUndoRedoActionFlag) {
+            registerSnapshotIntoHistory();
+            redoStack = []; 
+        }
+        save();
+    });
+
+    function registerSnapshotIntoHistory() {
+        if (undoStack.length === 0 || undoStack[undoStack.length - 1] !== editor.innerHTML) {
+            undoStack.push(editor.innerHTML);
+            if (undoStack.length > 50) undoStack.shift(); 
+        }
+    }
+
+    function triggerStackHistoryAction(actionType) {
+        if (actionType === 'undo') {
+            if (undoStack.length > 1) {
+                redoStack.push(undoStack.pop());
+                isUndoRedoActionFlag = true;
+                editor.innerHTML = undoStack[undoStack.length - 1];
+                isUndoRedoActionFlag = false;
+            } else if (undoStack.length === 1) {
+                redoStack.push(undoStack.pop());
+                isUndoRedoActionFlag = true;
+                editor.innerHTML = "";
+                isUndoRedoActionFlag = false;
+            }
+        } else if (actionType === 'redo') {
+            if (redoStack.length > 0) {
+                const nextState = redoStack.pop();
+                undoStack.push(nextState);
+                isUndoRedoActionFlag = true;
+                editor.innerHTML = nextState;
+                isUndoRedoActionFlag = false;
+            }
+        }
+        save();
+    }
+
+    function alterGlobalFontSize(offsetAmount) {
+        const song = db.find(x => x.id === activeId);
+        if (!song.fontSize) song.fontSize = 26;
+        
+        song.fontSize = Math.max(14, Math.min(64, song.fontSize + offsetAmount));
+        editor.style.fontSize = song.fontSize + "px";
+        
+        localStorage.setItem('tempo_v78_db', JSON.stringify(db));
+    }
+
+    function setSelectionColor(hexColor) { 
+        registerSnapshotIntoHistory();
+        document.execCommand('foreColor', false, hexColor); 
+        save(); 
+        refreshColorPaletteRibbonUI();
+    }
+
+    function appendSymbolChar(characterSymbol) {
+        editor.focus();
+        registerSnapshotIntoHistory();
+        document.execCommand('insertText', false, characterSymbol);
+        save();
+    }
+
+    function clearLyricsCanvas() {
+        if(confirm("ต้องการลบข้อความเนื้อเพลงทั้งหมดใช่หรือไม่?")) {
+            registerSnapshotIntoHistory();
+            editor.innerHTML = "";
+            save();
+        }
+    }
+
+    // --- SYMBOLS RIBBON MANAGEMENT ENGINE ---
+    function drawMacroBadges(symbolsList) {
+        const container = document.getElementById('macroContainer');
+        container.innerHTML = "";
+        
+        symbolsList.forEach((char, idx) => {
+            const btn = document.createElement('button');
+            btn.className = "px-2 py-0.5 bg-[#1a1438] text-xs font-black rounded text-purple-200 border border-white/5 min-w-[24px] active:scale-75 transition";
+            btn.innerText = char;
+            btn.title = "คลิกขวา หรือกดค้างเพื่อลบ";
+            
+            btn.onclick = () => appendSymbolChar(char);
+            btn.oncontextmenu = (e) => {
+                e.preventDefault();
+                purgeSelectedSymbol(idx);
+            };
+            container.appendChild(btn);
+        });
+
+        if (symbolsList.length < 14) {
+            const plusBtn = document.createElement('button');
+            plusBtn.className = "w-6 h-5 flex items-center justify-center bg-purple-900/40 text-[10px] rounded text-purple-300 border border-purple-500/30 active:scale-75 transition font-bold";
+            plusBtn.innerHTML = "<i class='fa-solid fa-plus'></i>";
+            plusBtn.onclick = () => promptTriggerNewSymbol();
+            container.appendChild(plusBtn);
+        }
+    }
+
+    function promptTriggerNewSymbol() {
+        const song = db.find(x => x.id === activeId);
+        if (song.symbols.length >= 14) return alert("จำกัดสัญลักษณ์สูงสุดได้ไม่เกิน 14 ตัวเท่านั้น");
+        
+        const output = prompt("พิมพ์สัญลักษณ์หรือตัวอักษรย่อที่ต้องการเพิ่ม:");
+        if (output && output.trim()) {
+            song.symbols.push(output.trim().substring(0, 4));
+            save();
+            drawMacroBadges(song.symbols);
+        }
+    }
+
+    function purgeSelectedSymbol(targetIdx) {
+        const song = db.find(x => x.id === activeId);
+        if (confirm(`ลบสัญลักษณ์ "${song.symbols[targetIdx]}" ออกจากแผงเครื่องมือ?`)) {
+            song.symbols.splice(targetIdx, 1);
+            save();
+            drawMacroBadges(song.symbols);
+        }
+    }
+
+    // --- COLOR MANAGEMENT ---
+    function refreshColorPaletteRibbonUI() {
+        const wrapper = document.getElementById('colorPaletteSlotsContainer');
+        wrapper.innerHTML = "";
+        const song = db.find(x => x.id === activeId);
+        
+        song.colorPalette.forEach((hex) => {
+            const circle = document.createElement('button');
+            circle.className = "w-5 h-5 rounded-full border border-white/10 block transition active:scale-75";
+            circle.style.backgroundColor = hex;
+            circle.onclick = () => setSelectionColor(hex);
+            circle.oncontextmenu = (e) => {
+                e.preventDefault();
+                if (song.colorPalette.length <= 3) return alert("ไม่ควรลบสีระบบเริ่มต้นเหลือน้อยเกินไป");
+                if (confirm(`ลบสีโปรไฟล์นี้ออก?`)) {
+                    song.colorPalette = song.colorPalette.filter(c => c !== hex);
+                    save();
+                    refreshColorPaletteRibbonUI();
+                }
+            };
+            wrapper.appendChild(circle);
+        });
+    }
+
+    function addNewColorFromPicker(selectedHexValue) {
+        const song = db.find(x => x.id === activeId);
+        if (song.colorPalette.includes(selectedHexValue)) return;
+        if (song.colorPalette.length >= 8) song.colorPalette.splice(5, 1); 
+        
+        song.colorPalette.push(selectedHexValue);
+        save();
+        refreshColorPaletteRibbonUI();
+    }
+
+    // --- AUTO SCROLL RUN ENGINE ---
+    function reengageAutoScrollLoop() {
+        clearInterval(autoScrollInterval);
+        const engineActive = document.getElementById('autoScrollCheck').checked;
+        if (engineActive) {
+            const rateSpeed = parseInt(document.getElementById('scrollSpeedSlider').value) || 40;
+            const computedTimeDelay = Math.max(10, 130 - rateSpeed);
+            autoScrollInterval = setInterval(() => {
+                const structuralScroller = document.getElementById('sheetScrollBody');
+                if (structuralScroller) structuralScroller.scrollTop += 1;
+            }, computedTimeDelay);
+        }
+    }
+
+    // --- AUDIO BACKING TRACK ENGINE ---
+    function processLoadedAudio(e) {
+        const file = e.target.files[0];
+        if(file) {
+            document.getElementById('audioFileStatus').innerHTML = `<i class="fa-solid fa-circle-check text-[#00ffcc] mr-1"></i> Connected: ${file.name}`;
+            coreAudio.src = URL.createObjectURL(file);
+            coreAudio.volume = parseFloat(document.getElementById('appVolumeSlider').value / 100);
+        }
+    }
+    
+    function toggleAudioPlayback() {
+        if(!coreAudio.src) return alert("กรุณาเลือกไฟล์เชื่อมต่อแหล่งสัญญาณเสียงก่อน");
+        if(coreAudio.paused) coreAudio.play(); else coreAudio.pause();
+    }
+
+    function fullStopAudioPlaybackTrack() {
+        coreAudio.pause();
+        coreAudio.currentTime = 0;
+        document.getElementById('sheetScrollBody').scrollTop = 0;
+        syncAllAudioPlayIconsStates();
+    }
+
+    function syncAllAudioPlayIconsStates() {
+        const status = coreAudio.paused || !coreAudio.src;
+        document.getElementById('quickPlayIcon').className = status ? "fa-solid fa-play ml-0.5" : "fa-solid fa-pause";
+        document.getElementById('audioPlayIcon').className = status ? "fa-solid fa-play" : "fa-solid fa-pause";
+    }
+
+    coreAudio.onplay = syncAllAudioPlayIconsStates;
+    coreAudio.onpause = syncAllAudioPlayIconsStates;
+    coreAudio.onended = () => { syncAllAudioPlayIconsStates(); document.getElementById('sheetScrollBody').scrollTop = 0; };
+    
+    function updateMetronomeVolume(val) { clickVolume = parseFloat(val / 100); document.getElementById('clickVolValueLabel').innerText = val + "%"; }
+    function updateSubdivisionVolume(val) { subVolume = parseFloat(val / 100); document.getElementById('subVolValueLabel').innerText = val + "%"; }
+    function changeCoreVolume(val) { coreAudio.volume = parseFloat(val / 100); document.getElementById('musicVolValueLabel').innerText = val + "%"; }
+    
+    function incrementAudioPlayback(sec) { coreAudio.currentTime += sec; }
+
+    // --- CONTROLS TRIGGERS ---
+    function changeBPM(amt) {
+        const inp = document.getElementById('bpmNumberInput');
+        inp.value = Math.min(350, Math.max(1, (parseInt(inp.value) || 84) + amt));
+        if(isPlaying) runSubdivisionTicker();
+        save();
+    }
+    function onManualBPM(val) { 
+        const inp = document.getElementById('bpmNumberInput');
+        let parsed = parseInt(val);
+        if (isNaN(parsed)) parsed = 84;
+        if (parsed > 350) inp.value = 350;
+        if (parsed < 1) inp.value = 1;
+        if(isPlaying) runSubdivisionTicker(); 
+        save(); 
+    }
+    function onTimeSigChange(val) { buildDynamicBeatDots(); if(isPlaying) runSubdivisionTicker(); save(); }
+    function onSubChange(val) { if(isPlaying) runSubdivisionTicker(); save(); }
+
+    selectSong(activeId);
+</script>
+</body>
+</html>
+    
+  </body>
+  
+</html>
